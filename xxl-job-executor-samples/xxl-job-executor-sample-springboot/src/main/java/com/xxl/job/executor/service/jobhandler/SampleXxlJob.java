@@ -5,6 +5,7 @@ import com.xxl.job.core.handler.annotation.XxlJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -72,32 +73,45 @@ public class SampleXxlJob {
 
     /**
      * 3、命令行任务
+     * param 格式 ping, 127.0.0.1
      */
     @XxlJob("commandJobHandler")
     public void commandJobHandler() throws Exception {
         String command = XxlJobHelper.getJobParam();
+
+        if (!StringUtils.hasText(command)) {
+            XxlJobHelper.handleFail("command param is empty: " + command);
+            return;
+        }
         int exitValue = -1;
 
         BufferedReader bufferedReader = null;
         try {
-            // command process
+            // 传参处理
+            String[] split = command.split(",");
+            String[] commands = new String[split.length];
+            for (int i = 0; i < split.length; i++) {
+                commands[i] = split[i].trim();
+            }
+
             ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command(command);
+            processBuilder.command(commands);
             processBuilder.redirectErrorStream(true);
 
             Process process = processBuilder.start();
+            // 下面命令可用直接传命令，例如 ping 127.0.0.1
             //Process process = Runtime.getRuntime().exec(command);
 
             BufferedInputStream bufferedInputStream = new BufferedInputStream(process.getInputStream());
-            bufferedReader = new BufferedReader(new InputStreamReader(bufferedInputStream));
+            bufferedReader = new BufferedReader(new InputStreamReader(bufferedInputStream, System.getProperty("os.name").contains("Windows") ? "GBK" : System.getProperty("file.encoding")));
 
-            // command log
+            // 记录命令执行结果
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 XxlJobHelper.log(line);
             }
 
-            // command exit
+            // 等待命令结束
             process.waitFor();
             exitValue = process.exitValue();
         } catch (Exception e) {
@@ -109,7 +123,7 @@ public class SampleXxlJob {
         }
 
         if (exitValue == 0) {
-            // default success
+
         } else {
             XxlJobHelper.handleFail("command exit value("+exitValue+") is failed");
         }
