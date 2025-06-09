@@ -1,157 +1,41 @@
 package com.xxl.job.admin.core.model;
 
+import lombok.Data;
+
 import java.util.Date;
 
 /**
  * xxl-job log, used to track trigger process
  * @author xuxueli  2015-12-19 23:19:09
+ * xxl_job_log
  */
+@Data
 public class XxlJobLog {
 	
 	private long id;
-	
-	// job info
+
+	// 任务信息
 	private int jobGroup;
 	private int jobId;
 
-	// execute info
+	// 执行器信息
 	private String executorAddress;
 	private String executorHandler;
 	private String executorParam;
 	private String executorShardingParam;
 	private int executorFailRetryCount;
 	
-	// trigger info
+	// 触发器信息
 	private Date triggerTime;
 	private int triggerCode;
 	private String triggerMsg;
 	
-	// handle info
+	// 执行信息
 	private Date handleTime;
-	private int handleCode;
-	private String handleMsg;
+	private int handleCode; // 任务执行状态
+	private String handleMsg;//
 
-	// alarm info
+	// 告警状态 0-默认、1-无需告警、2-告警成功、3-告警失败
 	private int alarmStatus;
-
-	public long getId() {
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public int getJobGroup() {
-		return jobGroup;
-	}
-
-	public void setJobGroup(int jobGroup) {
-		this.jobGroup = jobGroup;
-	}
-
-	public int getJobId() {
-		return jobId;
-	}
-
-	public void setJobId(int jobId) {
-		this.jobId = jobId;
-	}
-
-	public String getExecutorAddress() {
-		return executorAddress;
-	}
-
-	public void setExecutorAddress(String executorAddress) {
-		this.executorAddress = executorAddress;
-	}
-
-	public String getExecutorHandler() {
-		return executorHandler;
-	}
-
-	public void setExecutorHandler(String executorHandler) {
-		this.executorHandler = executorHandler;
-	}
-
-	public String getExecutorParam() {
-		return executorParam;
-	}
-
-	public void setExecutorParam(String executorParam) {
-		this.executorParam = executorParam;
-	}
-
-	public String getExecutorShardingParam() {
-		return executorShardingParam;
-	}
-
-	public void setExecutorShardingParam(String executorShardingParam) {
-		this.executorShardingParam = executorShardingParam;
-	}
-
-	public int getExecutorFailRetryCount() {
-		return executorFailRetryCount;
-	}
-
-	public void setExecutorFailRetryCount(int executorFailRetryCount) {
-		this.executorFailRetryCount = executorFailRetryCount;
-	}
-
-	public Date getTriggerTime() {
-		return triggerTime;
-	}
-
-	public void setTriggerTime(Date triggerTime) {
-		this.triggerTime = triggerTime;
-	}
-
-	public int getTriggerCode() {
-		return triggerCode;
-	}
-
-	public void setTriggerCode(int triggerCode) {
-		this.triggerCode = triggerCode;
-	}
-
-	public String getTriggerMsg() {
-		return triggerMsg;
-	}
-
-	public void setTriggerMsg(String triggerMsg) {
-		this.triggerMsg = triggerMsg;
-	}
-
-	public Date getHandleTime() {
-		return handleTime;
-	}
-
-	public void setHandleTime(Date handleTime) {
-		this.handleTime = handleTime;
-	}
-
-	public int getHandleCode() {
-		return handleCode;
-	}
-
-	public void setHandleCode(int handleCode) {
-		this.handleCode = handleCode;
-	}
-
-	public String getHandleMsg() {
-		return handleMsg;
-	}
-
-	public void setHandleMsg(String handleMsg) {
-		this.handleMsg = handleMsg;
-	}
-
-	public int getAlarmStatus() {
-		return alarmStatus;
-	}
-
-	public void setAlarmStatus(int alarmStatus) {
-		this.alarmStatus = alarmStatus;
-	}
 
 }
