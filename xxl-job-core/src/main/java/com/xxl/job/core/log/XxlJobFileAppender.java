@@ -62,8 +62,8 @@ public class XxlJobFileAppender {
 	}
 
 	/**
-	 * log filename, like "logPath/yyyy-MM-dd/9999.log"
-	 *
+	 * 根据触发时间获取任务记录文件名 yyyy-MM-dd/jobId.log
+	 * 例如：2025-06-10/1.log
 	 * @param triggerDate
 	 * @param logId
 	 * @return

@@ -33,30 +33,31 @@ public class EmbedServer {
     private ExecutorBiz executorBiz;
     private Thread thread;
 
-    public void start(final String address, final int port, final String appname, final String accessToken) {
+    public void start(final String address, final int port, final String appName, final String accessToken) {
         executorBiz = new ExecutorBizImpl();
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                // param
+                // 使用 netty 的 NIO
                 EventLoopGroup bossGroup = new NioEventLoopGroup();
                 EventLoopGroup workerGroup = new NioEventLoopGroup();
+                // 创建线程池
                 ThreadPoolExecutor bizThreadPool = new ThreadPoolExecutor(
                         0,
                         200,
                         60L,
                         TimeUnit.SECONDS,
-                        new LinkedBlockingQueue<Runnable>(2000),
+                        new LinkedBlockingQueue<>(2000),
                         new ThreadFactory() {
                             @Override
                             public Thread newThread(Runnable r) {
-                                return new Thread(r, "xxl-job, EmbedServer bizThreadPool-" + r.hashCode());
+                                return new Thread(r, "ExecutorServer");
                             }
                         },
                         new RejectedExecutionHandler() {
                             @Override
                             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                                throw new RuntimeException("xxl-job, EmbedServer bizThreadPool is EXHAUSTED!");
+                                throw new RuntimeException("xxl-job, EmbedServer executor is full!");
                             }
                         });
                 try {
@@ -68,21 +69,21 @@ public class EmbedServer {
                                 @Override
                                 public void initChannel(SocketChannel channel) throws Exception {
                                     channel.pipeline()
-                                            .addLast(new IdleStateHandler(0, 0, 30 * 3, TimeUnit.SECONDS))  // beat 3N, close if idle
-                                            .addLast(new HttpServerCodec())
-                                            .addLast(new HttpObjectAggregator(5 * 1024 * 1024))  // merge request & reponse to FULL
-                                            .addLast(new EmbedHttpServerHandler(executorBiz, accessToken, bizThreadPool));
+                                            .addLast(new IdleStateHandler(0, 0, 30 * 3, TimeUnit.SECONDS))  // 90s心跳检测，关闭空闲连接
+                                            .addLast(new HttpServerCodec()) // 编码
+                                            .addLast(new HttpObjectAggregator(5 * 1024 * 1024))  // 聚合较大请全体或响应体
+                                            .addLast(new EmbedHttpServerHandler(executorBiz, accessToken, bizThreadPool)); // 线程池处理真正的请求
                                 }
                             })
                             .childOption(ChannelOption.SO_KEEPALIVE, true);
 
-                    // bind
+                    // bind 端口
                     ChannelFuture future = bootstrap.bind(port).sync();
 
-                    logger.info(">>>>>>>>>>> xxl-job remoting server start success, nettype = {}, port = {}", EmbedServer.class, port);
+                    logger.info("xxl-job remoting server start success, netty = {}, port = {}", EmbedServer.class, port);
 
-                    // start registry
-                    startRegistry(appname, address);
+                    // 向调度中心注册
+                    startRegistry(appName, address);
 
                     // wait util stop
                     future.channel().closeFuture().sync();
@@ -102,7 +103,7 @@ public class EmbedServer {
                 }
             }
         });
-        thread.setDaemon(true);    // daemon, service jvm, user thread leave >>> daemon leave >>> jvm leave
+        thread.setDaemon(true);
         thread.start();
     }
 
@@ -112,9 +113,9 @@ public class EmbedServer {
             thread.interrupt();
         }
 
-        // stop registry
+        // 停止执行注册线程
         stopRegistry();
-        logger.info(">>>>>>>>>>> xxl-job remoting server destroy success.");
+        logger.info("xxl-job remoting server destroy success.");
     }
 
 
@@ -134,6 +135,12 @@ public class EmbedServer {
         private String accessToken;
         private ThreadPoolExecutor bizThreadPool;
 
+        /**
+         *
+         * @param executorBiz ExecutorBizImpl
+         * @param accessToken token
+         * @param bizThreadPool 执行任务线程池
+         */
         public EmbedHttpServerHandler(ExecutorBiz executorBiz, String accessToken, ThreadPoolExecutor bizThreadPool) {
             this.executorBiz = executorBiz;
             this.accessToken = accessToken;
@@ -142,45 +149,51 @@ public class EmbedServer {
 
         @Override
         protected void channelRead0(final ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
-            // request parse
-            //final byte[] requestBytes = ByteBufUtil.getBytes(msg.content());    // byteBuf.toString(io.netty.util.CharsetUtil.UTF_8);
+            // 指定读取请求体
             String requestData = msg.content().toString(CharsetUtil.UTF_8);
             String uri = msg.uri();
             HttpMethod httpMethod = msg.method();
             boolean keepAlive = HttpUtil.isKeepAlive(msg);
+            // 获取请求头token
             String accessTokenReq = msg.headers().get(XxlJobRemotingUtil.XXL_JOB_ACCESS_TOKEN);
 
             // invoke
-            bizThreadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    // do invoke
-                    Object responseObj = process(httpMethod, uri, requestData, accessTokenReq);
+            bizThreadPool.execute(() -> {
+                // do invoke
+                Object responseObj = process(httpMethod, uri, requestData, accessTokenReq);
 
-                    // to json
-                    String responseJson = GsonTool.toJson(responseObj);
+                // to json
+                String responseJson = GsonTool.toJson(responseObj);
 
-                    // write response
-                    writeResponse(ctx, keepAlive, responseJson);
-                }
+                // write response
+                writeResponse(ctx, keepAlive, responseJson);
             });
         }
 
+        /**
+         *
+         * @param httpMethod 请求方式，只支持 POST
+         * @param uri 请求uri，映射不同的处理
+         * @param requestData 请求体
+         * @param accessTokenReq 请求头token
+         * @return
+         */
         private Object process(HttpMethod httpMethod, String uri, String requestData, String accessTokenReq) {
-            // valid
+            // 校验
             if (HttpMethod.POST != httpMethod) {
                 return new ReturnT<String>(ReturnT.FAIL_CODE, "invalid request, HttpMethod not support.");
             }
             if (uri == null || uri.trim().length() == 0) {
                 return new ReturnT<String>(ReturnT.FAIL_CODE, "invalid request, uri-mapping empty.");
             }
+            // 执行器配置token，则校验
             if (accessToken != null
                     && accessToken.trim().length() > 0
                     && !accessToken.equals(accessTokenReq)) {
                 return new ReturnT<String>(ReturnT.FAIL_CODE, "The access token is wrong.");
             }
 
-            // services mapping
+            // uri 映射对于处理
             try {
                 switch (uri) {
                     case "/beat":
@@ -242,13 +255,19 @@ public class EmbedServer {
         }
     }
 
-    // ---------------------- registry ----------------------
-
-    public void startRegistry(final String appname, final String address) {
-        // start registry
-        ExecutorRegistryThread.getInstance().start(appname, address);
+    /**
+     * 启动注册线程 调度中心，每30s注册一次
+     * @param appName
+     * @param address
+     */
+    public void startRegistry(final String appName, final String address) {
+        // 线程异步注册
+        ExecutorRegistryThread.getInstance().start(appName, address);
     }
 
+    /**
+     *
+     */
     public void stopRegistry() {
         // stop registry
         ExecutorRegistryThread.getInstance().toStop();

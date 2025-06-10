@@ -1,11 +1,14 @@
 package com.xxl.job.core.context;
 
+import lombok.Data;
+
 /**
  * xxl-job context
  *
  * @author xuxueli 2020-05-21
  * [Dear hj]
  */
+@Data
 public class XxlJobContext {
 
     public static final int HANDLE_CODE_SUCCESS = 200;
@@ -20,7 +23,7 @@ public class XxlJobContext {
     private final long jobId;
 
     /**
-     * job param
+     * job 执行参数
      */
     private final String jobParam;
 
@@ -46,7 +49,7 @@ public class XxlJobContext {
     // ---------------------- for handle ----------------------
 
     /**
-     * handleCode：The result status of job execution
+     * 执行任务状态码
      *
      *      200 : success
      *      500 : fail
@@ -56,7 +59,7 @@ public class XxlJobContext {
     private int handleCode;
 
     /**
-     * handleMsg：The simple log msg of job execution
+     * 执行的日志
      */
     private String handleMsg;
 
@@ -71,45 +74,12 @@ public class XxlJobContext {
         this.handleCode = HANDLE_CODE_SUCCESS;  // default success
     }
 
-    public long getJobId() {
-        return jobId;
-    }
 
-    public String getJobParam() {
-        return jobParam;
-    }
-
-    public String getJobLogFileName() {
-        return jobLogFileName;
-    }
-
-    public int getShardIndex() {
-        return shardIndex;
-    }
-
-    public int getShardTotal() {
-        return shardTotal;
-    }
-
-    public void setHandleCode(int handleCode) {
-        this.handleCode = handleCode;
-    }
-
-    public int getHandleCode() {
-        return handleCode;
-    }
-
-    public void setHandleMsg(String handleMsg) {
-        this.handleMsg = handleMsg;
-    }
-
-    public String getHandleMsg() {
-        return handleMsg;
-    }
 
     // ---------------------- tool ----------------------
 
-    private static InheritableThreadLocal<XxlJobContext> contextHolder = new InheritableThreadLocal<XxlJobContext>(); // support for child thread of job handler)
+    // 子线程
+    private static InheritableThreadLocal<XxlJobContext> contextHolder = new InheritableThreadLocal<>(); // support for child thread of job handler)
 
     public static void setXxlJobContext(XxlJobContext xxlJobContext){
         contextHolder.set(xxlJobContext);

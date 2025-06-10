@@ -47,7 +47,7 @@ public class IpUtil {
     }
 
     /**
-     * valid Inet4Address
+     * 校验ipv4的有效性
      *
      * @param address
      * @return
@@ -57,11 +57,10 @@ public class IpUtil {
             return false;
         }
         String name = address.getHostAddress();
-        boolean result = (name != null
+        return (name != null
                 && IP_PATTERN.matcher(name).matches()
                 && !ANYHOST_VALUE.equals(name)
                 && !LOCALHOST_VALUE.equals(name));
-        return result;
     }
 
 
@@ -93,9 +92,10 @@ public class IpUtil {
         return address;
     }
 
-    // ---------------------- find ip ----------------------
-
-
+    /**
+     * 获取本机ip
+     * @return ip
+     */
     private static InetAddress getLocalAddress0() {
         InetAddress localAddress = null;
         try {
@@ -110,9 +110,7 @@ public class IpUtil {
 
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-            if (null == interfaces) {
-                return localAddress;
-            }
+
             while (interfaces.hasMoreElements()) {
                 try {
                     NetworkInterface network = interfaces.nextElement();
@@ -159,6 +157,7 @@ public class IpUtil {
             return LOCAL_ADDRESS;
         }
         InetAddress localAddress = getLocalAddress0();
+        logger.info("ipAddr: {}", localAddress);
         LOCAL_ADDRESS = localAddress;
         return localAddress;
     }
@@ -184,7 +183,7 @@ public class IpUtil {
     }
 
     public static String getIpPort(String ip, int port){
-        if (ip==null) {
+        if (ip == null) {
             return null;
         }
         return ip.concat(":").concat(String.valueOf(port));

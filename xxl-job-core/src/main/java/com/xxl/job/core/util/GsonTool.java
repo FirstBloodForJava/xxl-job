@@ -30,7 +30,7 @@ public class GsonTool {
     }
 
     /**
-     * json 转成 特定的cls的Object
+     * json 转成 特定的 class 的 Object
      *
      * @param json
      * @param classOfT

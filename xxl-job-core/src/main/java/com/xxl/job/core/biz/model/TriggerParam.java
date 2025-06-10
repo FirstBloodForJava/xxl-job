@@ -14,10 +14,10 @@ public class TriggerParam implements Serializable{
     private int jobId;
 
     // 执行器信息
-    private String executorHandler;
+    private String executorHandler; // jobHandler 名称
     private String executorParams;
-    private String executorBlockStrategy;
-    private int executorTimeout;
+    private String executorBlockStrategy;// job 执行阻塞策略
+    private int executorTimeout; // 执行超时时间
 
     private long logId;
     private long logDateTime;

@@ -75,7 +75,7 @@ public class XxlJobExecutor {
                     try {
                         oldJobThread.join();
                     } catch (InterruptedException e) {
-                        logger.error(">>>>>>>>>>> xxl-job, JobThread destroy(join) error, jobId:{}", item.getKey(), e);
+                        logger.error("xxl-job, JobThread destroy(join) error, jobId:{}", item.getKey(), e);
                     }
                 }
             }
@@ -84,10 +84,10 @@ public class XxlJobExecutor {
         jobHandlerRepository.clear();
 
 
-        // destroy JobLogFileCleanThread
+        // destroy JobLogFileCleanThread 清理日志线程
         JobLogFileCleanThread.getInstance().toStop();
 
-        // destroy TriggerCallbackThread
+        // destroy TriggerCallbackThread 触发器回调线程
         TriggerCallbackThread.getInstance().toStop();
 
     }
@@ -137,22 +137,23 @@ public class XxlJobExecutor {
      */
     private void initEmbedServer(String address, String ip, int port, String appname, String accessToken) throws Exception {
 
-        // fill ip port
+        // 挑选可用端口
         port = port > 0 ? port : NetUtil.findAvailablePort(9999);
+        // 获取ip
         ip = (ip != null && ip.trim().length() > 0) ? ip : IpUtil.getIp();
 
-        // generate address
+        // 生成执行器注册到调度中心地址
         if (address == null || address.trim().length() == 0) {
-            String ip_port_address = IpUtil.getIpPort(ip, port);   // registry-address：default use address to registry , otherwise use ip:port if address is null
-            address = "http://{ip_port}/".replace("{ip_port}", ip_port_address);
+            String ip_port_address = IpUtil.getIpPort(ip, port);
+            address = "http://" + IpUtil.getIpPort(ip, port) + "/";
         }
 
         // accessToken
         if (accessToken == null || accessToken.trim().length() == 0) {
-            logger.warn(">>>>>>>>>>> xxl-job accessToken is empty. To ensure system security, please set the accessToken.");
+            logger.warn("xxl-job accessToken is empty. To ensure system security, please set the accessToken.");
         }
 
-        // start
+        // start 启动Server容器
         embedServer = new EmbedServer();
         embedServer.start(address, port, appname, accessToken);
     }
@@ -169,9 +170,14 @@ public class XxlJobExecutor {
     }
 
 
-    // ---------------------- job handler repository ----------------------
+    // 缓存的JobHandler
     private static ConcurrentMap<String, IJobHandler> jobHandlerRepository = new ConcurrentHashMap<String, IJobHandler>();
 
+    /**
+     * 根据 jobHandler 获取 IJobHandler
+     * @param name
+     * @return
+     */
     public static IJobHandler loadJobHandler(String name) {
         return jobHandlerRepository.get(name);
     }
@@ -246,14 +252,23 @@ public class XxlJobExecutor {
     // ---------------------- job thread repository ----------------------
     private static ConcurrentMap<Integer, JobThread> jobThreadRepository = new ConcurrentHashMap<Integer, JobThread>();
 
-    public static JobThread registJobThread(int jobId, IJobHandler handler, String removeOldReason) {
+    /**
+     * 注册任务线程
+     * @param jobId 任务id
+     * @param handler Job执行器
+     * @param removeOldReason 停止原因
+     * @return
+     */
+    public static JobThread registryJobThread(int jobId, IJobHandler handler, String removeOldReason) {
         JobThread newJobThread = new JobThread(jobId, handler);
         newJobThread.start();
-        logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[]{jobId, handler});
+        logger.info("xxl-job regist JobThread success, jobId:{}, handler:{}", jobId, handler);
 
-        JobThread oldJobThread = jobThreadRepository.put(jobId, newJobThread);    // putIfAbsent | oh my god, map's put method return the old value!!!
+        JobThread oldJobThread = jobThreadRepository.put(jobId, newJobThread);
+
         if (oldJobThread != null) {
             oldJobThread.toStop(removeOldReason);
+            // 中断线程
             oldJobThread.interrupt();
         }
 

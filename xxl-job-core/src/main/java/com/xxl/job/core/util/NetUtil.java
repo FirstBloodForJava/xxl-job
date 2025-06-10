@@ -15,10 +15,9 @@ public class NetUtil {
     private static Logger logger = LoggerFactory.getLogger(NetUtil.class);
 
     /**
-     * find avaliable port
-     *
-     * @param defaultPort
-     * @return
+     * 默认端口不可用，则查找可用端口
+     * @param defaultPort 默认端口 9999
+     * @return 返回可用端口
      */
     public static int findAvailablePort(int defaultPort) {
         int portTmp = defaultPort;
@@ -41,10 +40,9 @@ public class NetUtil {
     }
 
     /**
-     * check port used
      *
-     * @param port
-     * @return
+     * @param port 端口号
+     * @return 校验端口是否被使用 true：被使用；false 未使用
      */
     public static boolean isPortUsed(int port) {
         boolean used = false;
@@ -53,7 +51,7 @@ public class NetUtil {
             serverSocket = new ServerSocket(port);
             used = false;
         } catch (IOException e) {
-            logger.info(">>>>>>>>>>> xxl-job, port[{}] is in use.", port);
+            logger.info("xxl-job, port[{}] is in use.", port);
             used = true;
         } finally {
             if (serverSocket != null) {
