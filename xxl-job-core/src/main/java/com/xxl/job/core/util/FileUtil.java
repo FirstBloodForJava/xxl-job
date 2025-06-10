@@ -18,7 +18,7 @@ public class FileUtil {
 
 
     /**
-     * delete recursively
+     * 递归删除文件文件及目录
      *
      * @param root
      * @return

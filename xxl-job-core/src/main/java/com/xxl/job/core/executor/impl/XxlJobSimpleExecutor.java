@@ -57,11 +57,8 @@ public class XxlJobSimpleExecutor extends XxlJobExecutor {
 
         // init job handler from method
         for (Object bean: xxlJobBeanList) {
-            // method
+            // method 方式获取注解方式注册的JobHandler
             Method[] methods = bean.getClass().getDeclaredMethods();
-            if (methods.length == 0) {
-                continue;
-            }
             for (Method executeMethod : methods) {
                 XxlJob xxlJob = executeMethod.getAnnotation(XxlJob.class);
                 // registry

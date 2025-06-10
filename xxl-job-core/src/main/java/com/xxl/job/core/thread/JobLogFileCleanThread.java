@@ -27,6 +27,11 @@ public class JobLogFileCleanThread {
 
     private Thread localThread;
     private volatile boolean toStop = false;
+
+    /**
+     *
+     * @param logRetentionDays 日志保留时间，小于3无效
+     */
     public void start(final long logRetentionDays){
 
         // limit min value
@@ -39,16 +44,16 @@ public class JobLogFileCleanThread {
             public void run() {
                 while (!toStop) {
                     try {
-                        // clean log dir, over logRetentionDays
+                        // clean log dir, over logRetentionDays 删除超过期限的日志
                         File[] childDirs = new File(XxlJobFileAppender.getLogPath()).listFiles();
-                        if (childDirs!=null && childDirs.length>0) {
+                        if (childDirs != null && childDirs.length > 0) {
 
                             // today
                             Calendar todayCal = Calendar.getInstance();
-                            todayCal.set(Calendar.HOUR_OF_DAY,0);
-                            todayCal.set(Calendar.MINUTE,0);
-                            todayCal.set(Calendar.SECOND,0);
-                            todayCal.set(Calendar.MILLISECOND,0);
+                            todayCal.set(Calendar.HOUR_OF_DAY, 0);
+                            todayCal.set(Calendar.MINUTE, 0);
+                            todayCal.set(Calendar.SECOND, 0);
+                            todayCal.set(Calendar.MILLISECOND, 0);
 
                             Date todayDate = todayCal.getTime();
 
@@ -58,7 +63,7 @@ public class JobLogFileCleanThread {
                                 if (!childFile.isDirectory()) {
                                     continue;
                                 }
-                                if (childFile.getName().indexOf("-") == -1) {
+                                if (!childFile.getName().contains("-")) {
                                     continue;
                                 }
 
@@ -74,7 +79,8 @@ public class JobLogFileCleanThread {
                                     continue;
                                 }
 
-                                if ((todayDate.getTime()-logFileCreateDate.getTime()) >= logRetentionDays * (24 * 60 * 60 * 1000) ) {
+                                // 日志文件名时间超过期限
+                                if ((todayDate.getTime() - logFileCreateDate.getTime()) >= logRetentionDays * (24 * 60 * 60 * 1000) ) {
                                     FileUtil.deleteRecursively(childFile);
                                 }
 
@@ -96,7 +102,7 @@ public class JobLogFileCleanThread {
                         }
                     }
                 }
-                logger.info(">>>>>>>>>>> xxl-job, executor JobLogFileCleanThread thread destroy.");
+                logger.info("xxl-job, executor JobLogFileCleanThread thread destroy.");
 
             }
         });

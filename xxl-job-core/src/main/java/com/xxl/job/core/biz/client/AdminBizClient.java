@@ -26,7 +26,8 @@ public class AdminBizClient implements AdminBiz {
         if (!this.addressUrl.endsWith("/")) {
             this.addressUrl = this.addressUrl + "/";
         }
-        if (!(this.timeout >=1 && this.timeout <= 10)) {
+        // 默认 3秒
+        if (this.timeout == 0) {
             this.timeout = 3;
         }
     }
@@ -36,9 +37,14 @@ public class AdminBizClient implements AdminBiz {
     private int timeout;
 
 
+    /**
+     * 执行器回调注册中心
+     * @param callbackParamList
+     * @return
+     */
     @Override
     public ReturnT<String> callback(List<HandleCallbackParam> callbackParamList) {
-        return XxlJobRemotingUtil.postBody(addressUrl+"api/callback", accessToken, timeout, callbackParamList, String.class);
+        return XxlJobRemotingUtil.postBody(addressUrl + "api/callback", accessToken, timeout, callbackParamList, String.class);
     }
 
     @Override
