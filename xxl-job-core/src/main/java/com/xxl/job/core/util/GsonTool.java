@@ -3,6 +3,7 @@ package com.xxl.job.core.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.xxl.job.core.biz.model.ReturnT;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -15,7 +16,7 @@ public class GsonTool {
 
     private static Gson gson = null;
     static {
-            gson= new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+            gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
     }
 
     /**
@@ -51,6 +52,11 @@ public class GsonTool {
         Type type = new ParameterizedType4ReturnT(classOfT, new Class[]{argClassOfT});
         return gson.fromJson(json, type);
     }
+
+    public static <T> ReturnT<T> fromJsonToReturnT(String json, Class<T> genericClass) {
+        return gson.fromJson(json,  new ParameterizedType4ReturnT(ReturnT.class, new Class[]{genericClass}));
+    }
+
     public static class ParameterizedType4ReturnT implements ParameterizedType {
         private final Class raw;
         private final Type[] args;
