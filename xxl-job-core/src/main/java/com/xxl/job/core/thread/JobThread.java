@@ -22,6 +22,7 @@ import java.util.concurrent.*;
 
 /**
  * handler thread
+ * 处理任务线程
  *
  * @author xuxueli 2016-1-16 19:52:47
  */
@@ -47,7 +48,7 @@ public class JobThread extends Thread {
         this.triggerLogIdSet = Collections.synchronizedSet(new HashSet<Long>());
 
         // assign job thread name
-        this.setName("xxl-job, JobThread-" + jobId + "-" + System.currentTimeMillis());
+        this.setName("JobThread-" + jobId + "-" + System.currentTimeMillis());
     }
 
     public IJobHandler getHandler() {
@@ -64,8 +65,8 @@ public class JobThread extends Thread {
     public ReturnT<String> pushTriggerQueue(TriggerParam triggerParam) {
         // avoid repeat
         if (triggerLogIdSet.contains(triggerParam.getLogId())) {
-            logger.info("repeate trigger job, logId:{}", triggerParam.getLogId());
-            return new ReturnT<String>(ReturnT.FAIL_CODE, "repeate trigger job, logId:" + triggerParam.getLogId());
+            logger.info("repeat trigger job, logId:{}", triggerParam.getLogId());
+            return new ReturnT<>(ReturnT.FAIL_CODE, "repeat trigger job, logId:" + triggerParam.getLogId());
         }
 
         triggerLogIdSet.add(triggerParam.getLogId());

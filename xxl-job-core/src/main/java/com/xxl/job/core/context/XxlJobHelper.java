@@ -99,10 +99,10 @@ public class XxlJobHelper {
     private static Logger logger = LoggerFactory.getLogger("xxl-job logger");
 
     /**
-     * append log with pattern
-     *
-     * @param appendLogPattern  like "aaa {} bbb {} ccc"
-     * @param appendLogArguments    like "111, true"
+     * Logger.info("a = {}", "1") 转换成 a = 1 功能
+     * @param appendLogPattern
+     * @param appendLogArguments
+     * @return
      */
     public static boolean log(String appendLogPattern, Object ... appendLogArguments) {
 
@@ -134,10 +134,9 @@ public class XxlJobHelper {
     }
 
     /**
-     * append log
-     *
-     * @param callInfo
-     * @param appendLog
+     * 日志文件追加信息
+     * @param callInfo 当前栈信息
+     * @param appendLog 格式化日志信息
      */
     private static boolean logDetail(StackTraceElement callInfo, String appendLog) {
         XxlJobContext xxlJobContext = XxlJobContext.getXxlJobContext();
@@ -145,26 +144,20 @@ public class XxlJobHelper {
             return false;
         }
 
-        /*// "yyyy-MM-dd HH:mm:ss [ClassName]-[MethodName]-[LineNumber]-[ThreadName] log";
-        StackTraceElement[] stackTraceElements = new Throwable().getStackTrace();
-        StackTraceElement callInfo = stackTraceElements[1];*/
+        String formatAppendLog = DateUtil.formatDateTime(new Date()) + " " +
+                "[" + callInfo.getClassName() + "." + callInfo.getMethodName() + "]" + "-" +
+                "[" + callInfo.getLineNumber() + "]" + "-" +
+                "[" + Thread.currentThread().getName() + "]" + " " +
+                (appendLog != null ? appendLog : "");
 
-        StringBuffer stringBuffer = new StringBuffer();
-        stringBuffer.append(DateUtil.formatDateTime(new Date())).append(" ")
-                .append("["+ callInfo.getClassName() + "#" + callInfo.getMethodName() +"]").append("-")
-                .append("["+ callInfo.getLineNumber() +"]").append("-")
-                .append("["+ Thread.currentThread().getName() +"]").append(" ")
-                .append(appendLog!=null?appendLog:"");
-        String formatAppendLog = stringBuffer.toString();
-
-        // appendlog
+        // 获取任务上下文信息
         String logFileName = xxlJobContext.getJobLogFileName();
 
-        if (logFileName!=null && logFileName.trim().length()>0) {
+        if (logFileName != null && logFileName.trim().length() > 0) {
             XxlJobFileAppender.appendLog(logFileName, formatAppendLog);
             return true;
         } else {
-            logger.info(">>>>>>>>>>> {}", formatAppendLog);
+            logger.info("logFile is null, {}", formatAppendLog);
             return false;
         }
     }

@@ -11,6 +11,7 @@ import com.xxl.job.core.handler.impl.GlueJobHandler;
 import com.xxl.job.core.handler.impl.ScriptJobHandler;
 import com.xxl.job.core.log.XxlJobFileAppender;
 import com.xxl.job.core.thread.JobThread;
+import com.xxl.job.core.util.GsonTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,11 +52,12 @@ public class ExecutorBizImpl implements ExecutorBiz {
 
     /**
      * 服务端执行任务
-     * @param triggerParam
+     * @param triggerParam 触发任务参数
      * @return
      */
     @Override
     public ReturnT<String> run(TriggerParam triggerParam) {
+        logger.info("jog triggerParam: {}", GsonTool.toJson(triggerParam));
         // 加载老的 JobThread 和 IJobHandler
         JobThread jobThread = XxlJobExecutor.loadJobThread(triggerParam.getJobId());
         IJobHandler jobHandler = jobThread != null ? jobThread.getHandler() : null;
@@ -157,21 +159,20 @@ public class ExecutorBizImpl implements ExecutorBiz {
             jobThread = XxlJobExecutor.registryJobThread(triggerParam.getJobId(), jobHandler, removeOldReason);
         }
 
-        // push data to queue
-        ReturnT<String> stringReturnT = jobThread.pushTriggerQueue(triggerParam);
-        return stringReturnT;
+        // push data to queue 需要这个触发 任务线程才能执行
+        return jobThread.pushTriggerQueue(triggerParam);
     }
 
     @Override
     public ReturnT<String> kill(KillParam killParam) {
-        // kill handlerThread, and create new one
+        // 伪中断：只能杀掉 sleep、wait、join 任务
         JobThread jobThread = XxlJobExecutor.loadJobThread(killParam.getJobId());
         if (jobThread != null) {
             XxlJobExecutor.removeJobThread(killParam.getJobId(), "scheduling center kill job.");
             return ReturnT.SUCCESS;
         }
 
-        return new ReturnT<String>(ReturnT.SUCCESS_CODE, "job thread already killed.");
+        return new ReturnT<>(ReturnT.SUCCESS_CODE, "job thread already killed.");
     }
 
     @Override
@@ -180,7 +181,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
         String logFileName = XxlJobFileAppender.makeLogFileName(new Date(logParam.getLogDateTim()), logParam.getLogId());
 
         LogResult logResult = XxlJobFileAppender.readLog(logFileName, logParam.getFromLineNum());
-        return new ReturnT<LogResult>(logResult);
+        return new ReturnT<>(logResult);
     }
 
 }

@@ -136,6 +136,12 @@ public class JobLogController {
 		return "joblog/joblog.detail";
 	}
 
+	/**
+	 *
+	 * @param logId 执行任务id
+	 * @param fromLineNum 开始行，默认1
+	 * @return
+	 */
 	@RequestMapping("/logDetailCat")
 	@ResponseBody
 	public ReturnT<LogResult> logDetailCat(long logId, int fromLineNum){
@@ -143,7 +149,7 @@ public class JobLogController {
 			// valid
 			XxlJobLog jobLog = xxlJobLogDao.load(logId);	// todo, need to improve performance
 			if (jobLog == null) {
-				return new ReturnT<LogResult>(ReturnT.FAIL_CODE, I18nUtil.getString("joblog_logid_unvalid"));
+				return new ReturnT<>(ReturnT.FAIL_CODE, I18nUtil.getString("joblog_logid_unvalid"));
 			}
 
 			// log cat
@@ -151,14 +157,17 @@ public class JobLogController {
 			ReturnT<LogResult> logResult = executorBiz.log(new LogParam(jobLog.getTriggerTime().getTime(), logId, fromLineNum));
 
 			// is end
-            if (logResult.getContent()!=null && logResult.getContent().getFromLineNum() > logResult.getContent().getToLineNum()) {
+            if (logResult.getContent() != null && logResult.getContent().getFromLineNum() > logResult.getContent().getToLineNum()) {
                 if (jobLog.getHandleCode() > 0) {
                     logResult.getContent().setEnd(true);
                 }
             }
+			if (logResult.getCode() == 500) {
+				logger.error(logResult.getMsg());
+			}
 
 			// fix xss
-			if (logResult.getContent()!=null && StringUtils.hasText(logResult.getContent().getLogContent())) {
+			if (logResult.getContent() != null && StringUtils.hasText(logResult.getContent().getLogContent())) {
 				String newLogContent = logResult.getContent().getLogContent();
 				newLogContent = HtmlUtils.htmlEscape(newLogContent, "UTF-8");
 				logResult.getContent().setLogContent(newLogContent);

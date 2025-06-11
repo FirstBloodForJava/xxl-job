@@ -8,13 +8,13 @@ import com.xxl.job.core.biz.model.*;
 public interface ExecutorBiz {
 
     /**
-     * 心跳检测
+     * 心跳检测 调度中心调度/执行器执行
      * @return
      */
     public ReturnT<String> beat();
 
     /**
-     * 任务检测
+     * 任务检测 调度中心调度/执行器执行
      *
      * @param idleBeatParam
      * @return
@@ -22,21 +22,21 @@ public interface ExecutorBiz {
     public ReturnT<String> idleBeat(IdleBeatParam idleBeatParam);
 
     /**
-     * run 任务执行
+     * run 任务执行 调度中心调度/执行器执行
      * @param triggerParam
      * @return
      */
     public ReturnT<String> run(TriggerParam triggerParam);
 
     /**
-     * kill
+     * kill 关闭任务 调度中心调度/执行器执行
      * @param killParam
      * @return
      */
     public ReturnT<String> kill(KillParam killParam);
 
     /**
-     * log
+     * 读取任务日志 调度中心调度/执行器执行
      * @param logParam
      * @return
      */

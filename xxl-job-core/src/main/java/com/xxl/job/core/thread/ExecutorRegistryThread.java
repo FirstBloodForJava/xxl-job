@@ -111,7 +111,7 @@ public class ExecutorRegistryThread {
             }
         });
         registryThread.setDaemon(true);
-        registryThread.setName("xxl-job, executor ExecutorRegistryThread");
+        registryThread.setName("executor-registry");
         registryThread.start();
     }
 

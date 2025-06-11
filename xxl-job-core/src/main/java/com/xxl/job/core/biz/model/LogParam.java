@@ -1,10 +1,13 @@
 package com.xxl.job.core.biz.model;
 
+import lombok.Data;
+
 import java.io.Serializable;
 
 /**
  * @author xuxueli 2020-04-11 22:27
  */
+@Data
 public class LogParam implements Serializable {
     private static final long serialVersionUID = 42L;
 
@@ -16,32 +19,8 @@ public class LogParam implements Serializable {
         this.fromLineNum = fromLineNum;
     }
 
-    private long logDateTim;
-    private long logId;
-    private int fromLineNum;
-
-    public long getLogDateTim() {
-        return logDateTim;
-    }
-
-    public void setLogDateTim(long logDateTim) {
-        this.logDateTim = logDateTim;
-    }
-
-    public long getLogId() {
-        return logId;
-    }
-
-    public void setLogId(long logId) {
-        this.logId = logId;
-    }
-
-    public int getFromLineNum() {
-        return fromLineNum;
-    }
-
-    public void setFromLineNum(int fromLineNum) {
-        this.fromLineNum = fromLineNum;
-    }
+    private long logDateTim; // 日志的时间
+    private long logId; // 任务id
+    private int fromLineNum; //开始行
 
 }

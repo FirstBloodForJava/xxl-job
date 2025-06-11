@@ -51,7 +51,7 @@ public class XxlJobTrigger {
         // 加载要执行的任务信息
         XxlJobInfo jobInfo = XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().loadById(jobId);
         if (jobInfo == null) {
-            logger.warn(">>>>>>>>>>>> trigger fail, jobId invalid，jobId={}", jobId);
+            logger.warn("trigger fail, jobId invalid，jobId={}", jobId);
             return;
         }
         if (executorParam != null) {

@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -113,7 +115,7 @@ public class XxlJobFileAppender {
 			appendLog = "";
 		}
 		appendLog += "\r\n";
-		
+
 		// append file content
 		FileOutputStream fos = null;
 		try {
@@ -131,19 +133,19 @@ public class XxlJobFileAppender {
 				}
 			}
 		}
-		
+
 	}
 
-	/**
-	 * support read log-file
-	 *
-	 * @param logFileName
-	 * @return log content
-	 */
+    /**
+     * 从指定行读取任务执行日志
+     * @param logFileName
+     * @param fromLineNum
+     * @return
+     */
 	public static LogResult readLog(String logFileName, int fromLineNum){
 
 		// valid log file
-		if (logFileName==null || logFileName.trim().length()==0) {
+		if (logFileName == null || logFileName.trim().length() == 0) {
             return new LogResult(fromLineNum, 0, "readLog fail, logFile not found", true);
 		}
 		File logFile = new File(logFileName);
@@ -153,15 +155,16 @@ public class XxlJobFileAppender {
 		}
 
 		// read file
-		StringBuffer logContentBuffer = new StringBuffer();
+        StringBuilder logContentBuffer = new StringBuilder();
 		int toLineNum = 0;
 		LineNumberReader reader = null;
 		try {
-			//reader = new LineNumberReader(new FileReader(logFile));
-			reader = new LineNumberReader(new InputStreamReader(new FileInputStream(logFile), "utf-8"));
+
+			reader = new LineNumberReader(new InputStreamReader(Files.newInputStream(logFile.toPath()), StandardCharsets.UTF_8));
 			String line = null;
 
-			while ((line = reader.readLine())!=null) {
+			while ((line = reader.readLine()) != null) {
+                // 是否从1开始？
 				toLineNum = reader.getLineNumber();		// [from, to], start as 1
 				if (toLineNum >= fromLineNum) {
 					logContentBuffer.append(line).append("\n");
@@ -180,8 +183,7 @@ public class XxlJobFileAppender {
 		}
 
 		// result
-		LogResult logResult = new LogResult(fromLineNum, toLineNum, logContentBuffer.toString(), false);
-		return logResult;
+        return new LogResult(fromLineNum, toLineNum, logContentBuffer.toString(), false);
 
 		/*
         // it will return the number of characters actually skipped
