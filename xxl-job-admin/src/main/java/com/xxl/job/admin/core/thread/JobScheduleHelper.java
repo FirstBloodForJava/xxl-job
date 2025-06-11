@@ -42,7 +42,7 @@ public class JobScheduleHelper {
             public void run() {
 
                 try {
-                    TimeUnit.MILLISECONDS.sleep(5000 - System.currentTimeMillis()%1000 );
+                    TimeUnit.MILLISECONDS.sleep(5000 - System.currentTimeMillis() % 1000 );
                 } catch (Throwable e) {
                     if (!scheduleThreadToStop) {
                         logger.error(e.getMessage(), e);
@@ -62,6 +62,7 @@ public class JobScheduleHelper {
                     Boolean connAutoCommit = null;
                     PreparedStatement preparedStatement = null;
 
+                    // 是否有任务待触发
                     boolean preReadSuc = true;
                     try {
 
@@ -76,42 +77,45 @@ public class JobScheduleHelper {
 
                         // 1、pre read
                         long nowTime = System.currentTimeMillis();
+                        // 查询下次执行小于等于 (当前时间 + 5s)并启动的任务
                         List<XxlJobInfo> scheduleList = XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().scheduleJobQuery(nowTime + PRE_READ_MS, preReadCount);
-                        if (scheduleList!=null && scheduleList.size()>0) {
-                            // 2、push time-ring
+                        if (scheduleList != null && scheduleList.size() > 0) {
+                            // 2、处理查询到的任务
                             for (XxlJobInfo jobInfo: scheduleList) {
 
-                                // time-ring jump
+                                // 触发时间: < nowTime - 5s
+                                // time-ring jump 下次触发任务在5s前，任务已过期
                                 if (nowTime > jobInfo.getTriggerNextTime() + PRE_READ_MS) {
                                     // 2.1、trigger-expire > 5s：pass && make next-trigger-time
-                                    logger.warn(">>>>>>>>>>> xxl-job, schedule misfire, jobId = " + jobInfo.getId());
+                                    logger.warn("xxl-job, schedule misfire, jobId = " + jobInfo.getId());
 
-                                    // 1、misfire match
+                                    // 1、misfire match 查询任务过期策略
                                     MisfireStrategyEnum misfireStrategyEnum = MisfireStrategyEnum.match(jobInfo.getMisfireStrategy(), MisfireStrategyEnum.DO_NOTHING);
                                     if (MisfireStrategyEnum.FIRE_ONCE_NOW == misfireStrategyEnum) {
-                                        // FIRE_ONCE_NOW 》 trigger
+                                        // FIRE_ONCE_NOW > trigger 调度任务一次
                                         JobTriggerPoolHelper.trigger(jobInfo.getId(), TriggerTypeEnum.MISFIRE, -1, null, null, null);
-                                        logger.debug(">>>>>>>>>>> xxl-job, schedule push trigger : jobId = " + jobInfo.getId() );
+                                        logger.debug("xxl-job,overdue schedule push trigger : jobId = " + jobInfo.getId() );
                                     }
 
-                                    // 2、fresh next
+                                    // 2、fresh next 设置下次任务执行时间
                                     refreshNextValidTime(jobInfo, new Date());
 
                                 } else if (nowTime > jobInfo.getTriggerNextTime()) {
-                                    // 2.2、trigger-expire < 5s：direct-trigger && make next-trigger-time
+                                    // 触发时间: (nowTime - 5s) <= time < nowTime
+                                    // 2.2、trigger-expire < 5s：direct-trigger && make next-trigger-time 过期时间小于5s
 
-                                    // 1、trigger
+                                    // 1、trigger 触发任务
                                     JobTriggerPoolHelper.trigger(jobInfo.getId(), TriggerTypeEnum.CRON, -1, null, null, null);
                                     logger.debug(">>>>>>>>>>> xxl-job, schedule push trigger : jobId = " + jobInfo.getId() );
 
-                                    // 2、fresh next
+                                    // 2、fresh next 设置下次任务执行时间
                                     refreshNextValidTime(jobInfo, new Date());
 
-                                    // next-trigger-time in 5s, pre-read again
-                                    if (jobInfo.getTriggerStatus()==1 && nowTime + PRE_READ_MS > jobInfo.getTriggerNextTime()) {
+                                    // next-trigger-time in 5s, pre-read again 下次任务触发在 5s 内
+                                    if (jobInfo.getTriggerStatus() == 1 && nowTime + PRE_READ_MS > jobInfo.getTriggerNextTime()) {
 
                                         // 1、make ring second
-                                        int ringSecond = (int)((jobInfo.getTriggerNextTime()/1000)%60);
+                                        int ringSecond = (int)((jobInfo.getTriggerNextTime() / 1000) % 60);
 
                                         // 2、push time ring
                                         pushTimeRing(ringSecond, jobInfo.getId());
@@ -123,9 +127,11 @@ public class JobScheduleHelper {
 
                                 } else {
                                     // 2.3、trigger-pre-read：time-ring trigger && make next-trigger-time
+                                    // 还未开始执行，但是在 5s 内触发
+                                    // 触发时间 >= nowTime
 
                                     // 1、make ring second
-                                    int ringSecond = (int)((jobInfo.getTriggerNextTime()/1000)%60);
+                                    int ringSecond = (int)((jobInfo.getTriggerNextTime() / 1000) % 60);
 
                                     // 2、push time ring
                                     pushTimeRing(ringSecond, jobInfo.getId());
@@ -139,6 +145,7 @@ public class JobScheduleHelper {
 
                             // 3、update trigger info
                             for (XxlJobInfo jobInfo: scheduleList) {
+                                // 更新所有任务下次触发时间
                                 XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().scheduleUpdate(jobInfo);
                             }
 
@@ -151,7 +158,7 @@ public class JobScheduleHelper {
 
                     } catch (Throwable e) {
                         if (!scheduleThreadToStop) {
-                            logger.error(">>>>>>>>>>> xxl-job, JobScheduleHelper#scheduleThread error:{}", e);
+                            logger.error("xxl-job, JobScheduleHelper#scheduleThread error:{}", e);
                         }
                     } finally {
 
@@ -180,6 +187,8 @@ public class JobScheduleHelper {
                             }
                         }
 
+                        // 连接违背 先开后关原则
+
                         // close PreparedStatement
                         if (null != preparedStatement) {
                             try {
@@ -198,7 +207,7 @@ public class JobScheduleHelper {
                     if (cost < 1000) {  // scan-overtime, not wait
                         try {
                             // pre-read period: success > scan each second; fail > skip this period;
-                            TimeUnit.MILLISECONDS.sleep((preReadSuc?1000:PRE_READ_MS) - System.currentTimeMillis()%1000);
+                            TimeUnit.MILLISECONDS.sleep((preReadSuc ? 1000 : PRE_READ_MS) - System.currentTimeMillis() % 1000);
                         } catch (Throwable e) {
                             if (!scheduleThreadToStop) {
                                 logger.error(e.getMessage(), e);
@@ -208,11 +217,11 @@ public class JobScheduleHelper {
 
                 }
 
-                logger.info(">>>>>>>>>>> xxl-job, JobScheduleHelper#scheduleThread stop");
+                logger.info("xxl-job, JobScheduleHelper#scheduleThread stop");
             }
         });
         scheduleThread.setDaemon(true);
-        scheduleThread.setName("xxl-job, admin JobScheduleHelper#scheduleThread");
+        scheduleThread.setName("JobScheduleHelper#scheduleThread");
         scheduleThread.start();
 
 
@@ -237,14 +246,14 @@ public class JobScheduleHelper {
                         List<Integer> ringItemData = new ArrayList<>();
                         int nowSecond = Calendar.getInstance().get(Calendar.SECOND);   // 避免处理耗时太长，跨过刻度，向前校验一个刻度；
                         for (int i = 0; i < 2; i++) {
-                            List<Integer> tmpData = ringData.remove( (nowSecond+60-i)%60 );
+                            List<Integer> tmpData = ringData.remove( (nowSecond + 60 - i) % 60 );
                             if (tmpData != null) {
                                 ringItemData.addAll(tmpData);
                             }
                         }
 
                         // ring trigger
-                        logger.debug(">>>>>>>>>>> xxl-job, time-ring beat : " + nowSecond + " = " + Arrays.asList(ringItemData) );
+                        logger.debug("xxl-job, time-ring beat : " + nowSecond + " = " + ringItemData );
                         if (ringItemData.size() > 0) {
                             // do trigger
                             for (int jobId: ringItemData) {
@@ -256,11 +265,11 @@ public class JobScheduleHelper {
                         }
                     } catch (Throwable e) {
                         if (!ringThreadToStop) {
-                            logger.error(">>>>>>>>>>> xxl-job, JobScheduleHelper#ringThread error:{}", e);
+                            logger.error("xxl-job, JobScheduleHelper#ringThread error:{}", e);
                         }
                     }
                 }
-                logger.info(">>>>>>>>>>> xxl-job, JobScheduleHelper#ringThread stop");
+                logger.info("xxl-job, JobScheduleHelper#ringThread stop");
             }
         });
         ringThread.setDaemon(true);
@@ -280,7 +289,7 @@ public class JobScheduleHelper {
                 jobInfo.setTriggerStatus(0);
                 jobInfo.setTriggerLastTime(0);
                 jobInfo.setTriggerNextTime(0);
-                logger.error(">>>>>>>>>>> xxl-job, refreshNextValidTime fail for job: jobId={}, scheduleType={}, scheduleConf={}",
+                logger.error("xxl-job, refreshNextValidTime fail for job: jobId={}, scheduleType={}, scheduleConf={}",
                         jobInfo.getId(), jobInfo.getScheduleType(), jobInfo.getScheduleConf());
             }
         } catch (Throwable e) {
@@ -289,11 +298,16 @@ public class JobScheduleHelper {
             jobInfo.setTriggerLastTime(0);
             jobInfo.setTriggerNextTime(0);
 
-            logger.error(">>>>>>>>>>> xxl-job, refreshNextValidTime error for job: jobId={}, scheduleType={}, scheduleConf={}",
+            logger.error("xxl-job, refreshNextValidTime error for job: jobId={}, scheduleType={}, scheduleConf={}",
                     jobInfo.getId(), jobInfo.getScheduleType(), jobInfo.getScheduleConf(), e);
         }
     }
 
+    /**
+     *
+     * @param ringSecond 执行间隔小于5s的任务 ringSecond < 60
+     * @param jobId
+     */
     private void pushTimeRing(int ringSecond, int jobId){
         // push async ring
         List<Integer> ringItemData = ringData.get(ringSecond);
@@ -303,7 +317,7 @@ public class JobScheduleHelper {
         }
         ringItemData.add(jobId);
 
-        logger.debug(">>>>>>>>>>> xxl-job, schedule push time-ring : " + ringSecond + " = " + Arrays.asList(ringItemData) );
+        logger.debug("xxl-job, schedule push time-ring : " + ringSecond + " = " + ringItemData);
     }
 
     public void toStop(){

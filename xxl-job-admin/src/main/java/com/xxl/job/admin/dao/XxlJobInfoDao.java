@@ -43,7 +43,7 @@ public interface XxlJobInfoDao {
 
 	/**
 	 * find schedule job, limit "trigger_status = 1"
-	 *
+	 * 查询启动的任务
 	 * @param maxNextTime
 	 * @param pagesize
 	 * @return

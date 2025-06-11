@@ -149,15 +149,16 @@ public class JobTriggerPoolHelper {
     }
 
     /**
-     * @param jobId
-     * @param triggerType
-     * @param failRetryCount
+     * @param jobId 任务id
+     * @param triggerType 任务触发方式
+     * @param failRetryCount 失败重试次数
      * 			>=0: use this param
      * 			<0: use param from job info config
-     * @param executorShardingParam
-     * @param executorParam
+     * @param executorShardingParam 广播参数
+     * @param executorParam 执行参数
      *          null: use job param
      *          not null: cover job param
+     * @param addressList 执行器地址
      */
     public static void trigger(int jobId, TriggerTypeEnum triggerType, int failRetryCount, String executorShardingParam, String executorParam, String addressList) {
         helper.addTrigger(jobId, triggerType, failRetryCount, executorShardingParam, executorParam, addressList);
