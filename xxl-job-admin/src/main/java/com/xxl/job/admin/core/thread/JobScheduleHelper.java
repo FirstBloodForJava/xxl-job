@@ -366,13 +366,22 @@ public class JobScheduleHelper {
 
 
     // ---------------------- tools ----------------------
+
+    /**
+     * 获取下次调度的时间
+     * @param jobInfo
+     * @param fromTime
+     * @return
+     * @throws Exception
+     */
     public static Date generateNextValidTime(XxlJobInfo jobInfo, Date fromTime) throws Exception {
         ScheduleTypeEnum scheduleTypeEnum = ScheduleTypeEnum.match(jobInfo.getScheduleType(), null);
         if (ScheduleTypeEnum.CRON == scheduleTypeEnum) {
+            // 解析 cron 表达式
             Date nextValidTime = new CronExpression(jobInfo.getScheduleConf()).getNextValidTimeAfter(fromTime);
             return nextValidTime;
         } else if (ScheduleTypeEnum.FIX_RATE == scheduleTypeEnum /*|| ScheduleTypeEnum.FIX_DELAY == scheduleTypeEnum*/) {
-            return new Date(fromTime.getTime() + Integer.valueOf(jobInfo.getScheduleConf())*1000 );
+            return new Date(fromTime.getTime() + Long.parseLong(jobInfo.getScheduleConf()) * 1000);
         }
         return null;
     }
