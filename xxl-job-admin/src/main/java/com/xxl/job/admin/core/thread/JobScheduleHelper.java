@@ -158,7 +158,7 @@ public class JobScheduleHelper {
 
                     } catch (Throwable e) {
                         if (!scheduleThreadToStop) {
-                            logger.error("xxl-job, JobScheduleHelper#scheduleThread error:{}", e);
+                            logger.error("xxl-job, JobScheduleHelper#scheduleThread error:", e);
                         }
                     } finally {
 
@@ -266,7 +266,7 @@ public class JobScheduleHelper {
                         }
                     } catch (Throwable e) {
                         if (!ringThreadToStop) {
-                            logger.error("xxl-job, JobScheduleHelper#ringThread error:{}", e);
+                            logger.error("xxl-job, JobScheduleHelper#ringThread error:", e);
                         }
                     }
                 }
@@ -274,7 +274,7 @@ public class JobScheduleHelper {
             }
         });
         ringThread.setDaemon(true);
-        ringThread.setName("xxl-job, admin JobScheduleHelper#ringThread");
+        ringThread.setName("JobScheduleHelper#ringThread");
         ringThread.start();
     }
 
