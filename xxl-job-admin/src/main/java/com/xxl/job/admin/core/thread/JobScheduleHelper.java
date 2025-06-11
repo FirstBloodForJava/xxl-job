@@ -245,6 +245,7 @@ public class JobScheduleHelper {
                         // second data
                         List<Integer> ringItemData = new ArrayList<>();
                         int nowSecond = Calendar.getInstance().get(Calendar.SECOND);   // 避免处理耗时太长，跨过刻度，向前校验一个刻度；
+                        // 例如任务需要在 59 秒执行，58秒的时候执行超过3s多， 就会到59秒的任务需要下次才能执行，间隔1分钟
                         for (int i = 0; i < 2; i++) {
                             List<Integer> tmpData = ringData.remove( (nowSecond + 60 - i) % 60 );
                             if (tmpData != null) {
